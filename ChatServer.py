@@ -2,7 +2,7 @@ import socket as Socket
 import _thread
 import os, time, datetime
 
-# Java developer in Python be like:
+# Java developer starting coding in Python be like:
 true = True
 false = False
 
@@ -13,20 +13,21 @@ clients = []
 try:
     if not os.path.exists("logs"):
         os.makedirs("logs")
-    path = "logs/log-"+str(datetime.datetime.now()).replace(" ", "_") + ".txt"
-    print(path)
-    logFile = open(str(path), "at")
+    file = "log-"+str(datetime.datetime.now()).replace(" ", "_").replace(":", ".") + ".txt"
+    logFile = open(os.path.join(os.getcwd(), "logs", file), "w+")
 except IOError as e:
     print("Failed to create a log file: ", e)
     logFile = None
-    
+
 def log(text):
-    text = text + f"[{time.ctime(time.time())}] "
+    text = f"[{time.ctime(time.time())}] " + text
     print(text)
     try:
         logFile.write(text + "\n")
+        logFile.flush()
     except IOError:
         pass
+
 
 log(f"Starting ChatServer on /{ifconfig}:{port}")
 
@@ -49,8 +50,13 @@ class Klient:
     def send(self, usr):
         return self.sck.send(usr)
     def sendUTF(self, msg):
-        print(msg)
+        log(msg)
         return self.sck.send(msg.encode("utf-8"))
+    def getNickname(self):
+        return self.nick
+    def getAddr(self):
+        return self.addr
+    
 
 # print("server socket")
 skt = Socket.socket()
@@ -58,28 +64,34 @@ skt.bind((ifconfig, port))
 skt.listen(2)
 
 def broadcast(msg):
+    log(msg.decode("utf-8"))
     for client in clients:
             try:
                 client.send(msg)
             except Exception as e:
-                log("error L2: ", e)
+                log(f"[{client.getNickname()}@{client.getAddr()}] error L2: " + str(e))
                 clients.remove(client)
 
 def server_thread(cl):
     while True:
         try:
             msg = cl.recv()
-            usr = cl.format()
-            log(usr + msg.decode("utf-8"))
-            usr = usr.encode("utf-8")
+            usr = cl.format().encode("utf-8")
             broadcast(usr + msg)
         except Exception as e:
-            log("error L1: " + e)
+            log(f"[{cl.getNickname()}@{cl.getAddr()}] error L1: " + str(e))
+            break
 
 def server_messaging():
     while true:
-        msg = "{ S e r v e r @ " + str(port) + " }: " + input("Enter a message to be send as @server..\r\n")
-        broadcast(msg.encode("utf-8"))
+        inp = input("Enter a message to be send as @server..\r\n")
+        if inp.startswith("/"):
+            if(inp[1:].startswith("stop")):
+                broadcast("Server shutting down!")
+                exit(0)
+        else:
+            msg = "{ S e r v e r @ " + str(port) + " }: " + inp
+            broadcast(msg.encode("utf-8"))
 _thread.start_new_thread(lambda: server_messaging(), (()))
 
 # print("client listener")

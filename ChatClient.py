@@ -19,7 +19,7 @@ try:
     io.connect((srvaddr, port))
     io.send(nick.encode("utf-8"))
     ans = io.recv(32).decode("utf-8")
-    print("connected. server's welcome message: '" + ans + "'.")
+    print("connected. server's welcome message: '" + ans + "'")
 except Exception:
     print("couldn't connect. check server's address, network status or firewall configuration.")
     exit(-1)
@@ -33,7 +33,7 @@ _thread.start_new_thread(rx, (()))
 
 #print("dbg: message sender thread")
 while True:
-        io.send(input().encode("utf-8"))
+        io.send(input()[0:256].encode("utf-8"))
 io.close()
-input("disconnected.")
+input("disconnected")
 exit(0)
